@@ -1,0 +1,12 @@
+{
+  "name": "election-results-scraper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "scrape": "node index.js"
+  },
+  "dependencies": {
+    "puppeteer": "^13.4.0"
+  }
+}
