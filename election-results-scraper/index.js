@@ -1,52 +1,11 @@
-const puppeteer = require('puppeteer');
+const fs = require('fs');
+const getElectionDates = require('./getElectionDates');
+const getElectionResults = require('./getElectionResults');
+const dates = require('../data/source/election_dates.json');
 
-function downloadElectionDateFiles(url) {
-  puppeteer
-    .launch({ headless: false })
-    .then(function (browser) {
-      return browser.newPage();
-    })
-    .then(function (page) {
-      return page.goto(url).then(function () {
-        page.waitForSelector('#dropdownMenu3').then(() => {
-          page.click('button#dropdownMenu3').then(() => {
-            page
-              .waitForSelector(
-                '[aria-label="Export Types"] > button:nth-child(6)'
-              )
-              .then(() => {
-                page._client
-                  .send('Page.setDownloadBehavior', {
-                    behavior: 'allow',
-                    downloadPath: './downloads',
-                  })
-                  .then(() => {
-                    page.click(
-                      '[aria-label="Export Types"] > button:nth-child(6)'
-                    );
-                  });
-              });
-          });
-        });
-
-        page.waitForSelector('#dropdownMenu3').then(() => {
-          page.click('button#dropdownMenu3').then(() => {
-            page
-              .waitForSelector(
-                '[aria-label="Export Types"] > button:nth-child(9)'
-              )
-              .then(() => {
-                page.click('[aria-label="Export Types"] > button:nth-child(9)');
-              });
-          });
-        });
-      });
-    })
-    .catch(function (err) {
-      console.log('Error opening URL', err);
-    });
-}
-
-downloadElectionDateFiles(
-  'https://results.okelections.us/OKER/?elecDate=20211109'
-);
+(async () => {
+  const loadedDates = fs.readdirSync('./downloads').map((f) => f.split('_')[0]);
+  const datesToLoad = dates.filter((d) => !loadedDates.includes(d.date));
+  console.log(`Loading ${datesToLoad.length} dates...`);
+  await getElectionResults(datesToLoad);
+})();
