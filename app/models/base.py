@@ -7,6 +7,7 @@ from .engine.app import db
 class BaseModel:
 
     DEFAULT_SORT = ['id', 'ASC']
+    DEFAULT_RANGE = [0, 9]
 
     @classmethod
     def getBaseQuery(cls):
@@ -14,16 +15,20 @@ class BaseModel:
 
     @classmethod
     def getList(cls):
-        page, perPage, sort, filter = cls.getListArgs()
+        range, sort, filter = cls.getListArgs()
+
         print(
-            f"{cls.__name__}.getList: page={page} perPage={perPage} sort={sort} filter={filter}")
+            f"{cls.__name__}.getList: range={range} sort={sort} filter={filter}")
         q = cls.getBaseQuery()
         if sort[1] == 'DESC':
             q = q.order_by(getattr(cls, sort[0]).desc())
         else:
             q = q.order_by(getattr(cls, sort[0]))
-        offset = (page - 1) * perPage
-        q = q.offset(offset).limit(perPage)
+        # apply offset and limit if range != [0, 0]
+        if (range[0] != 0 or range[1] != 0):
+            offset = range[0]
+            limit = (range[1] - range[0]) + 1
+            q = q.offset(offset).limit(limit)
         total = cls.count_star()
         response = make_response(jsonify(cls.getListReponse(q.all())))
         response.headers.add("X-Total-Count", total)
@@ -36,18 +41,15 @@ class BaseModel:
 
     @ classmethod
     def getListArgs(cls):
-        page = request.args.get('page', 1)
-        if (isinstance(page, str)):
+        range = request.args.get('range', cls.DEFAULT_RANGE)
+        if (isinstance(range, str)):
             try:
-                page = int(page)
+                range = json.loads(range)
+                if (not isinstance(range, list)):
+                    range = cls.DEFAULT_RANGE
             except Exception as e:
-                page = 1
-        perPage = request.args.get('perPage', 10)
-        if (isinstance(perPage, str)):
-            try:
-                perPage = int(perPage)
-            except Exception as e:
-                perPage = 10
+                range = cls.DEFAULT_RANGE
+
         sort = request.args.get('sort', cls.DEFAULT_SORT)
         if (isinstance(sort, str)):
             try:
@@ -57,7 +59,7 @@ class BaseModel:
             except Exception as e:
                 sort = cls.DEFAULT_SORT
         filter = request.args.get('filter', {})
-        return page, perPage, sort, filter
+        return range, sort, filter
 
     @ classmethod
     def count_star(cls):
