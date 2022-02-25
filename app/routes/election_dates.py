@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 from flask import Blueprint
 from models import ElectionDate
-from flask_cors import CORS
 
 
 election_dates_bp = Blueprint('election_dates', __name__)

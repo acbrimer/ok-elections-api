@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from models.engine.app import app
+from models.engine.app import app, db
 from flask import jsonify
 import os
 from routes import *
